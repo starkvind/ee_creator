@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<title>Generador Estrellas Errantes :: v.1.4</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<!-- Scripts de terceros -->
+		<script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+		<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+		<script src="jspdf.min.js"></script>
+		<link href="https://code.jquery.com/ui/1.10.4/themes/redmond/jquery-ui.css" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+		<!-- Estilo Naufragio -->
+		<link href="styleNaufragio.css" rel="stylesheet">
+		<!-- Scripts Naufragio -->
+		<script src="javaNaufragio.js"></script>
+		<script src="charNames.js"></script>
+		<script src="estrellasErrantesData.js"></script>
+		<script src="estrellasErrantesEquipment.js"></script>
+		<!-- Generación de PJ -->
+		<script type="text/javascript">
+		/* ------------------------------------------------------- */
+	  /* Crear campos de selección  														 */
+	  /* ------------------------------------------------------- */
+	  $(document).ready(function() {
+	    /* Creamos listas de selección */
+	      var groupList;
+	      var optionList;
+	      // Creamos lista de Clases.
+	      for (var i = 0; i < playerClassEe.nombre.length; i++) {
+	        // Creamos la lista de grupo.
+	        groupList = playerClassEe.origen[i].toString();
+	        optionList = playerClassEe.nombre[i].toString();
+	        // Si está disponible, la añadimos.
+	        if (availableClasses.includes(i)) {
+	          if ($('#optionClass optgroup[label="' + groupList + '"]').html() == null) {
+	            if (homebrewClasses.includes(i)) {
+	              var homebrewFlag = "Homebrew";
+	            } else {
+	              var homebrewFlag = "";
+	            }
+	             $('#optionClass').append('<optgroup label="' + groupList + '" id="' + homebrewFlag + '"></optgroup>');
+	             $('#optionClass optgroup[label="' + groupList + '"]').append(
+	               '<option value="' + i +'">' + optionList + '</option>'
+	             );
+	          } else {
+	             $('#optionClass optgroup[label="' + groupList + '"]').append(
+	               '<option value="' + i +'">' + optionList + '</option>'
+	             );
+	          }
+	        }
+	      };
+	      // Creamos lista de Clases.
+	      for (r = 0; r < playerRacesEe.nombre.length; r++) {
+	        // Creamos la lista de grupo.
+	        groupList = playerRacesEe.origen[r].toString();
+	        optionList = playerRacesEe.nombre[r].toString();
+	        // Si está disponible, la añadimos.
+	        if (availableRaces.includes(r)) {
+	          if ($('#optionRace optgroup[label="' + groupList + '"]').html() == null) {
+	             $('#optionRace').append('<optgroup label="' + groupList + '"></optgroup>');
+	             $('#optionRace optgroup[label="' + groupList + '"]').append(
+	               '<option value="' + r +'">' + optionList + '</option>'
+	             );
+	          } else {
+	             $('#optionRace optgroup[label="' + groupList + '"]').append(
+	               '<option value="' + r +'">' + optionList + '</option>'
+	             );
+	          }
+	        }
+	      };
+	    	checkHomebrew();
+	  	});
+			/* --------------------------------------- */
+			// Cargamos los archivos necesarios.
+			function reloadData() {
+				var head = document.getElementsByTagName("head")[0];
+				var script = document.createElement("script");
+				script.src= "estrellasErrantesData.js";
+				head.appendChild(script);
+	    };
+			/* --------------------------------------- */
+			/* Creación de personaje - ALL THE GORDO   */
+			/* --------------------------------------- */
+			function genChar(jsonData) {
+				// Limpiamos consola.
+				console.clear();
+				// Recargamos los datos de Clases.
+				reloadData();
+				// Ocultamos elementos no deseamos.
+				$("#infoAtr").fadeOut();
+				/* ------------------------------------------------------- */
+				/* Creación de personaje                                   */
+				/* ------------------------------------------------------- */
+				// Si hemos cargado datos de JSON, no hacemos nada de esto.
+				if (jsonData == null) {
+				// Género del personaje.
+					var playerGender 		= getRandomInt(0, 1);
+				// Para elegir el Género que queremos.
+					if ($("#optionGender").val() != "random") {
+						playerGender = parseInt($("#optionGender").val());
+					};
+				// Nombre de personaje al azar.
+					var playerName 			= getRandomInt(0, namePool.length -1);
+					var playerSurname 	= getRandomInt(0, namePool.length -1);
+				// Evitamos que el nombre sea el mismo que el apellido.
+					while (playerName == playerSurname) {
+						playerSurname 		= getRandomInt(0, namePool.length -1);
+					};
+				// Designamos la Clase del personaje.
+				var playerClass = 0;
+				var playerLevel = getRandomInt(1,5);
+				// Clases aleatorias.
+				var iac = 0; // Intentos aleatorios de Clase.
+				// Para elegir el Nivel que queremos.
+				if (
+					$("#optionLevel").val() > 0 &&
+					$("#optionLevel").val() <= 5
+				) {
+					playerLevel = parseInt($("#optionLevel").val());
+				};
+				// Para elegir la Clase que queremos.
+				if ($("#optionClass").val() != "random") {
+					playerClass = $("#optionClass").val();
+				} else {
+					// Comprobamos Clases Homebrew.
+					do {
+						iac++;
+						playerClass = availableClasses[getRandomInt(0, availableClasses.length -1)];
+						// Comprobamos si es una Clase Homebrew; si es así y no han marcado que quieren Homebrew, la descartamos.
+						if ($("#acceptHomebrew:checked").length > 0 || !homebrewClasses.includes(playerClass)) {
+							//console.log("Intento: " + iac + ". Clase correcta.");
+							break;
+						}
+					}
+					while(iac < 50);
+				};
+
+				/* Rasgos  */
+				var playerTraits = playerClassEe.rasgos[playerClass];
+				//  % para Rasgos opcionales, como la nave del Contrabandista.
+				var chanceOfTrait = getRandomInt(1,100);
+
+				/* Cambios de sexo por Rasgos. */
+				// -------------------------------------------
+				// Si somos un Seregroide, no somos ni chico ni chica, pero usamos el género masculino.
+				// Rasgo Doble ser
+				if (playerTraits.includes(107)) {
+					playerGender = 0;
+				};
+				// -------------------------------------------
+				// Si somos Amazona galáctica, solo podemos ser chica.
+				// Rasgo Orgullo de amazona
+				if (playerTraits.includes(54)) {
+					playerGender = 1;
+				};
+				// -------------------------------------------
+
+				// Alineamiento del personaje para Clérigos cósmicos.
+				var playerAlignment = null;
+
+				/* Raza */
+				var playerRace = null;
+				// Para elegir la Raza que queremos.
+				if ($("#acceptHomebrew:checked").length > 0) {
+					// Comprobamos si hemos elegido alguna raza.
+					switch($("#optionRace").val()) {
+						case "random":
+							playerRace = availableRaces[getRandomInt(0, availableRaces.length -1)];
+						break;
+						case "no":
+							playerRace = null;
+						break;
+						default:
+							playerRace = parseInt($("#optionRace").val());
+						break;
+					};
+					// Si la Raza no es nula y la Clase no está en el listado de Clases Raza.
+					if(playerRace != null && !raceClasses.includes(parseInt(playerClass))) {
+						playerTraits = playerTraits.concat(playerRacesEe.rasgos[playerRace]);
+					};
+				};
+
+				console.log("------------------------");
+				console.log(namePool[playerName] + " " + namePool[playerSurname] + ", " + playerClassEe.nombre[playerClass]);
+				console.log("------------------------");
+
+				/* Atributos */
+				var playerStats = {};
+				var attribArray = [];
+				var attribLimit = 64;
+				do {
+					/* ------------------------------------------------------- */
+					/* Atributos                                               */
+					/* ------------------------------------------------------- */
+					playerStats = {
+						bio: getRandomInt(2,12) + 4,
+						com: getRandomInt(2,12) + 4,
+						psi: getRandomInt(2,12) + 4,
+						tec: getRandomInt(2,12) + 4,
+					};
+					// Array de Atributos para control de Puntos.
+					attribArray = Object.values(playerStats);
+					attribTotal = attribArray.reduce(getSum, 0);
+				}
+				// Mientras los Atributos no sean igual o menor que el nº indicado, repetirá la asignación.
+				while (attribLimit < attribTotal);
+				/* ------------------------------------------------------- */
+				/* Optimización Atributos según Clase     							 	 */
+				/* ------------------------------------------------------- */
+				attribArray.sort(function(a, b){return a-b});
+				// Inicializamos variables.
+				var charAttributes = Object.keys(playerStats);
+				var preferredAttributes = [];
+				var attribTest;
+				var randomAttrib;
+				var randomAttribName;
+				var i = 0;
+				// Si hemos marcado optimizar Atributos, lo hacemos.
+				if ($("#optimizeAttr:checked").length > 0) {
+					console.log("OPTIMIZACIÓN DE ATRIBUTOS");
+					// Atributos recomendados.
+					preferredAttributes = playerClassEe.atributos[playerClass].split("-");
+					// Si tenemos Atributos preferidos, los asignamos.
+					if (preferredAttributes[0] != "") {
+						for (i = 0; i < preferredAttributes.length; i++) {
+						 // Asignamos el valor preferido de Atributo.
+						 attribTest = preferredAttributes[i].toLowerCase();
+						 // Colocamos el valor.
+						 playerStats[attribTest] = attribArray[i];
+						 console.log(" Atributo " + (i + 1) + " es " + attribTest.toUpperCase() + ": " + attribArray[i]);
+						 // Quitamos el Atributo del array.
+						 charAttributes.splice(charAttributes.indexOf(attribTest), 1);
+						}
+					}
+					// Resto de atributos.
+					do {
+						// Elegimos un Atributo al azar de los que quedan.
+						randomAttrib = getRandomInt(0, charAttributes.length - 1);
+						randomAttribName = charAttributes[randomAttrib];
+						console.log(" Atributo " + (i + 1) + " es " + randomAttribName.toUpperCase() + ": " + attribArray[i]);
+						// Colocamos el valor.
+						playerStats[randomAttribName] = attribArray[i];
+						// Quitamos el Atributo del array.
+ 					 	charAttributes.splice(randomAttrib, 1);
+						i++;
+					}	while (charAttributes.length > 0);
+				};
+				/* -------------------------------------------------------- */
+				/* Dados del Personaje 																			*/
+				/* -------------------------------------------------------- */
+				var playerDice 		= playerClassEe.dados[playerClass].split("-");
+				var playerHealth 	= playerDice[1].split("d");
+				/* -------------------------------------------------------- */
+				/* Chequeo de Atributos y Niveles 													*/
+				/* -------------------------------------------------------- */
+				var levelUp = 5 - playerLevel;
+				var actLevel = 1;
+				/* Si subimos de Nivel, vamos haciendo pruebas de Atributo. */
+				/* -------------------------------------------------------- */
+				if (playerLevel > 1) {
+					do {
+						levelUp++;
+						actLevel++;
+						console.log("¡¡SUBE NIVEL!!");
+						if (attribUpCheck(playerStats.bio)) {
+							playerStats.bio -= 1;
+							console.log("> Nivel " + actLevel + " sube BIO.");
+						}
+						if (attribUpCheck(playerStats.com)) {
+							playerStats.com -= 1;
+							console.log("> Nivel " + actLevel + " sube COM.");
+						}
+						if (attribUpCheck(playerStats.psi)) {
+							playerStats.psi -= 1;
+							console.log("> Nivel " + actLevel + " sube PSI.");
+						}
+						if (attribUpCheck(playerStats.tec)) {
+							playerStats.tec -= 1;
+							console.log("> Nivel " + actLevel + " sube TEC.");
+						}
+					}
+					while (levelUp < 4);
+					console.log("------------------------");
+				};
+				/* -------------------------------------------------------------------*/
+				/* Rasgos alienígenas																									*/
+				/* -------------------------------------------------------------------*/
+				var raceCost = 0; // Costes adicionales por Raza.
+				var humanityMin = 2; // Mínimo de Humanidad para reducir el DU.
+				// Rasgo Biología alienígena
+				if (playerTraits.includes(41)) {
+					raceCost = 50;
+					humanityMin = 1;
+				};
+				// Rasgo Vestal de las mareas
+				if (playerTraits.includes(46)) {
+					// 50% de tenerlo.
+					if (chanceOfTrait < 50 || playerGender != 1) {
+						// Lo quitamos. No es Vestal o es chico.
+						playerTraits.splice(playerTraits.indexOf(46), 1);
+					} else {
+						// Es Vestal. Reducimos Dados.
+						playerDice[0] = consumeUsageDice(playerDice[0]);
+						playerDice[1] = consumeUsageDice(playerDice[1]);
+						playerHealth 	= playerDice[1].split("d");
+					}
+				};
+				// Rasgo Pulsos de memoria colectiva
+				if (playerTraits.includes(111)) {
+					// 50% de tenerlo.
+					if (chanceOfTrait < 50) {
+						// Lo quitamos. No tiene los Pulsos.
+						playerTraits.splice(playerTraits.indexOf(111), 1);
+					}
+				};
+				/* -------------------------------------------------------------------*/
+				/* Equipo inicial 																										*/
+				/* -------------------------------------------------------------------*/
+				// Monedas
+				var firstCoins = getRandomInt(3 * playerLevel, 18 * playerLevel) * 10;
+				// Armas
+				var firstWeapon	= 0;
+				if (playerClassEe.armas[playerClass].length > 0) {
+					 firstWeapon = getRandomInt(0, playerClassEe.armas[playerClass].length - 1);
+				};
+				// Protección
+				var firstArmor = 0;
+				// Comprobamos si podemos llevar Protección.
+				if (playerClassEe.protecciones[playerClass].length > 0) {
+					// Si tenemos marcada la opción Optimizar protección, damos el mayor valor.
+					if ($("#optimizeArmor:checked").length > 0) {
+						firstArmor = playerClassEe.protecciones[playerClass].length;
+					} else {
+						firstArmor = getRandomInt(1, playerClassEe.protecciones[playerClass].length);
+					}
+				};
+				/* -------------------------------------------------------------------*/
+				/* Rasgos que alteran el Equipo																				*/
+				/* -------------------------------------------------------------------*/
+				// Rasgo Prototipo experimental.
+				if (playerTraits.includes(49)) {
+					// 50% de tenerlo.
+					if (chanceOfTrait < 50) {
+						// Lo quitamos.
+						playerTraits.splice(playerTraits.indexOf(49), 1);
+					} else {
+						// Tiene el Prototipo. Quitamos equipo.
+						firstWeapon = undefined;
+						firstArmor = 0;
+					}
+				};
+				// Rasgo Sociedad de arqueólogos
+				if (playerTraits.includes(61)) {
+					firstCoins += getRandomInt(2, 12) * 10;
+				};
+				/* -------------------------------------------------------------------*/
+				/* MODIFICACIONES DEL EQUIPO																					*/
+				/* -------------------------------------------------------------------*/
+				// Inicialización de variables.
+				var charUpgrades;
+				var charImplants;
+				var charItems;
+				var armorUpgrades = [];
+				var playerImplants = [];
+				var playerItems = [];
+				// Comprobamos el valor de opción.
+				switch($("#optionEquipmentPriority").val()) {
+					// Implantes, Objetos, Mejoras
+					case "implants":
+						charImplants = buyImplants(firstCoins, raceCost, playerDice, humanityMin, playerTraits);
+						firstCoins -= charImplants[1];
+						charItems = buyItems(firstCoins);
+						firstCoins -= charItems[1];
+						charUpgrades = buyAmorUpgrades(firstCoins, firstArmor, raceCost, playerTraits);
+						firstCoins -= charUpgrades[1];
+					break;
+					// Objetos, Mejoras, Implantes
+					case "items":
+						charItems = buyItems(firstCoins);
+						firstCoins -= charItems[1];
+						charUpgrades = buyAmorUpgrades(firstCoins, firstArmor, raceCost, playerTraits);
+						firstCoins -= charUpgrades[1];
+						charImplants = buyImplants(firstCoins, raceCost, playerDice, humanityMin, playerTraits);
+						firstCoins -= charImplants[1];
+					break;
+					// Por defecto: Mejoras, Implantes, Objetos.
+					default:
+						charUpgrades = buyAmorUpgrades(firstCoins, firstArmor, raceCost, playerTraits);
+						firstCoins -= charUpgrades[1];
+						charImplants = buyImplants(firstCoins, raceCost, playerDice, humanityMin, playerTraits);
+						firstCoins -= charImplants[1];
+						charItems = buyItems(firstCoins);
+						firstCoins -= charItems[1];
+					break;
+				};
+				// Aplicamos lo obtenido al personaje.
+				armorUpgrades = charUpgrades[0];
+				playerImplants = charImplants[0];
+				playerItems = charItems[0];
+				/* -------------------------------------------------------------------*/
+				/* MÓDULOS DE EXPANSIÓN 																							*/
+				/* -------------------------------------------------------------------*/
+				var playerModules = [];
+				var randomModule;
+				var iam = 0; // Intentos aleatorios de Módulos.
+				// Si tenemos el Rasgo de Módulos de expansión...
+				if (playerTraits.includes(30)) {
+					console.log("MÓDULOS DE EXPANSIÓN");
+					do {
+						randomModule = getRandomInt(0, androidModules.nombre.length - 1);
+						iam++;
+						if (
+							playerModules.length < (1 + Math.ceil(playerLevel / 2)) &&
+							!playerModules.includes(randomModule)
+						) {
+							// Si todo ha ido bien, añadimos el Módulo.
+							playerModules[playerModules.length] = randomModule;
+							console.log(
+								">> Módulo: " +
+								androidModules.nombre[randomModule]
+							);
+						}
+					}
+					while (iam < 50);
+				};
+				// Características
+				var playerChar = {
+					salud: 				calcHealth(playerLevel, playerDice[1]),
+					poder: 				0,
+					defensa: 			armorsEe.defensa[firstArmor]
+				};
+				// Poderes
+				var playerPowers = [];
+				var powerLimit = 0;
+				var powerType;
+				/* ---------------------------- */
+				/* Beneficios de los Rasgos PJ  */
+				/* ---------------------------- */
+				// Rasgo Ese montón de chatarra.
+				if (playerTraits.includes(7)) {
+					// 50% de tenerlo.
+					if (chanceOfTrait < 50) {
+						// Lo quitamos.
+						playerTraits.splice(playerTraits.indexOf(7), 1);
+					}
+				};
+				// Rasgo Inalcanzable
+				if (playerTraits.includes(14)) {
+					playerChar.defensa = 2 + playerLevel;
+				};
+				// Rasgo Maestro de la espada
+				if (playerTraits.includes(15)) {
+					if (playerLevel >= 5) {
+						playerDice[0] = "3d4";
+					} else if (playerLevel >= 3) {
+						playerDice[0] = "1d6 + 1d4";
+					}
+				};
+				// Rasgo Poder del infinito
+				if (playerTraits.includes(19)) {
+					playerChar.poder = playerLevel * 2 + 1;
+					powerLimit = playerLevel * 2;
+					powerType = "Psiónica";
+				};
+				// Rasgo Entrenamiento militar
+				if (playerTraits.includes(21)) {
+					if (playerLevel >= 5) {
+						playerDice[0] = "1d12";
+					} else if (playerLevel >= 3) {
+						playerDice[0] = "1d10";
+					}
+				};
+				// Rasgo Coraza tecnológica
+				if (playerTraits.includes(28)) {
+					playerChar.defensa = playerLevel;
+				};
+				// Rasgo Adaptable
+				var adaptableTrait = Object.keys(playerStats).reduce(function(a, b){ return playerStats[a] < playerStats[b] ? a : b });
+				if (playerTraits.includes(31)) {
+					playerStats[adaptableTrait] -= 1;
+					console.log(
+						">> Adaptable: " +
+						adaptableTrait.toUpperCase() +
+						" se reduce de " +
+						(playerStats[adaptableTrait] + 1) +
+						" a " +
+						playerStats[adaptableTrait] +
+						"."
+					);
+					console.log("------------------------");
+				};
+				// Rasgo Afinidad con el Karma
+				if (playerTraits.includes(35) && playerClass == 4) {
+					playerChar.poder += 1;
+				};
+				// Rasgo Camuflaje
+				if (playerTraits.includes(36) && playerClass == 3) {
+					playerChar.defensa += 2;
+				};
+				// Rasgo Duro de pelar
+				if (playerTraits.includes(39)) {
+					playerChar.salud += 1;
+				};
+				// Rasgo Vestal de las mareas
+				if (playerTraits.includes(46)) {
+					playerChar.poder = playerLevel * 2;
+					powerLimit = playerLevel;
+					powerType = "Psiónica";
+				};
+				// Rasgo Dominio del arma
+				if (playerTraits.includes(52) && playerLevel >= 3) {
+					playerDice[0] = "1d6 + 1d4";
+				};
+				// Rasgo Sabiduría vil
+				if (playerTraits.includes(53)) {
+					playerChar.poder = playerLevel;
+				};
+				/* ------------------------------------------------------------------ */
+				// Rasgo Poder de la fe
+				if (playerTraits.includes(76)) {
+					playerAlignment = getRandomInt(0,1);
+					playerChar.poder = playerLevel * 2;
+					if (playerLevel == 2 || playerLevel == 3) {
+						playerChar.poder -= 1;
+					}
+					// Dependiendo si somos de la Luz o de la Oscuridad, recibimos ciertos Poderes.
+					switch (playerAlignment) {
+						case 0:
+						// Añadimos los 3 Poderes básicos.
+							playerPowers = [26,27,29];
+							// Si tiene más Nivel, damos los adecuados.
+							if (playerLevel >= 3) {
+								playerPowers[playerPowers.length] = 31;
+							}
+							if (playerLevel >= 5) {
+								playerPowers[playerPowers.length] = 33;
+							}
+						break;
+						case 1:
+						// Añadimos los 3 Poderes básicos.
+							playerPowers = [26,28,30];
+							// Si tiene más Nivel, damos los adecuados.
+							if (playerLevel >= 3) {
+								playerPowers[playerPowers.length] = 32;
+							}
+							if (playerLevel >= 5) {
+								playerPowers[playerPowers.length] = 34;
+							}
+						break;
+					}
+				};
+				/* ------------------------------------------------------------------ */
+				// Rasgo Ese montón de chatarra pirata.
+				if (playerTraits.includes(78)) {
+					// 50% de tenerlo.
+					if (chanceOfTrait < 50) {
+						// Lo quitamos.
+						playerTraits.splice(playerTraits.indexOf(78), 1);
+					}
+				};
+				// Rasgo Opsiófago
+				if (playerTraits.includes(106)) {
+					powerLimit += 2;
+					// Añadimos los dos Poderes del Skalding.
+					playerPowers[playerPowers.length] = 35;
+					playerPowers[playerPowers.length] = 36;
+				};
+				// Rasgo Membrana corporal
+				if (playerTraits.includes(109)) {
+					playerChar.defensa += (Math.ceil(playerLevel * 0.4)) * 2;
+				};
+				// Rasgo Pulsos de memoria colectiva
+				if (playerTraits.includes(111)) {
+					playerChar.salud -= 2;
+					//playerHealth 	= playerHealth - 2;
+					playerChar.poder = playerLevel * 2;
+					powerLimit = getRandomInt(1,4);
+					powerType = "Psiónica";
+				};
+				/* ---------------------------- */
+				/* Beneficios de los Implantes  */
+				/* ---------------------------- */
+				// Implante de Piel sintética.
+				if (playerImplants.includes(8)) {
+					playerChar.defensa += 2;
+				};
+				// Módulo de Expansión Estructura blindada.
+				if (playerModules.includes(4)) {
+					playerChar.defensa += 3;
+				};
+				/* ---------------------------- */
+				/* Poderes Psiónica 						*/
+				/* ---------------------------- */
+				if (powerLimit > 0) {
+					console.log("PODERES DE " + namePool[playerName].toUpperCase());
+					do {
+						randomPower = getRandomInt(0, powersEe.nombre.length -1);
+						if (!playerPowers.includes(randomPower) && powersEe.tipo[randomPower] == powerType) {
+							// Si todo ha ido bien, añadimos el Poder.
+							playerPowers[playerPowers.length] = randomPower;
+							console.log(
+								" >> Poder: " +
+								powersEe.nombre[randomPower] +
+								", Coste: " +
+								powersEe.coste[randomPower]
+							);
+						}
+					}
+					while (playerPowers.length < powerLimit);
+				};
+			// Finalización comprobar JSON.
+			};
+				// Operaciones con Semillas.
+				var seedData;
+				// Si está cargado desde un archivo TXT, le damos caña.
+				if (jsonData != undefined) {
+					seedData = JSON.parse(jsonData);
+					// Datos identificativos.
+					playerName 			= seedData.nombre;
+					playerSurname 	= seedData.apellido;
+					playerGender		= seedData.genero;
+					// Ocupación y especie.
+					playerClass			= seedData.clase;
+					playerLevel			= seedData.nivel;
+					playerRace			= seedData.especie;
+					playerStats			= seedData.atributos;
+					playerDice			= seedData.dados;
+					playerChar			= seedData.valores;
+					playerAlignment = seedData.alineamiento;
+					// Listados.
+					playerTraits		= seedData.rasgos;
+					playerImplants	= seedData.implantes;
+					playerModules		= seedData.modulos;
+					playerPowers		= seedData.poderes;
+					// Equipo.
+					firstCoins			= seedData.creditos;
+					firstWeapon			= seedData.arma;
+					firstArmor			= seedData.proteccion;
+					armorUpgrades		= seedData.mejoras;
+					playerItems			= seedData.equipo;
+					raceCost				= seedData.coste;
+					// Indicamos que hemos cargado el señor.
+					if (playerName != null && playerSurname != null) {
+						alert("¡Datos de " + namePool[playerName] + " " + namePool[playerSurname] + " cargados con éxito!");
+					} else {
+						alert("Ha ocurrido un problema con la carga de la semilla.");
+					};
+				};
+				/* ------------------------------------- */
+				/* Semilla															 */
+				/* ------------------------------------- */
+				var playerSeed = {
+					// Datos identificativos.
+					nombre: 				playerName,
+					apellido: 			playerSurname,
+					genero:					playerGender,
+					// Ocupación y especie.
+					clase:					playerClass,
+					nivel:					playerLevel,
+					especie:				playerRace,
+					atributos:			playerStats,
+					dados:					playerDice,
+					valores:				playerChar,
+					alineamiento: 	playerAlignment,
+					// Listados
+					rasgos: 				playerTraits,
+					implantes:			playerImplants,
+					modulos:				playerModules,
+					poderes:				playerPowers,
+					// Equipo
+					creditos:				firstCoins,
+					arma: 					firstWeapon,
+					proteccion:			firstArmor,
+					mejoras:				armorUpgrades,
+					equipo:					playerItems,
+					coste:					raceCost
+				};
+
+				var jsonSeed = JSON.stringify(playerSeed);
+				/* -------------------------- */
+				/* HOJA DE PERSONAJE 					*/
+				/* -------------------------- */
+				// Nombre de Personaje.
+				$("#playerName").html(namePool[playerName] + " " + namePool[playerSurname]);
+				// Competencias de Equipo de la Clase.
+				$("#playerCompetences").html("<strong>Competencias</strong>: " + playerClassEe.competencias[playerClass]);
+				// Nivel
+				$("#playerLevel").html(", Nivel " + playerLevel);
+				// Alineamiento
+				switch (playerAlignment) {
+					case 1:
+						playerAlignment = " (Oscuridad)";
+					break;
+					case 0:
+						playerAlignment = " (Luz)";
+					break;
+					default:
+						playerAlignment = "";
+				};
+				// Género
+				switch(playerGender) {
+					case 0:
+						// Macho.
+						if (playerRace == null || raceClasses.includes(parseInt(playerClass))) {
+							$("#playerJob").html(playerClassEe.nombre[playerClass] + playerAlignment);
+						} else {
+							$("#playerJob").html(playerClassEe.nombre[playerClass] + playerAlignment + " " + playerRacesEe.nombre[playerRace].toLowerCase());
+						};
+					break;
+					case 1:
+						// Hembra
+						if (playerRace == null || raceClasses.includes(parseInt(playerClass))) {
+							$("#playerJob").html(playerClassEe.nombre_f[playerClass] + playerAlignment);
+						} else {
+							$("#playerJob").html(playerClassEe.nombre_f[playerClass] + playerAlignment + " " + playerRacesEe.nombre_f[playerRace].toLowerCase());
+						};
+					break;
+				};
+				/* -------------------------- */
+				/* Atributos                  */
+				/* -------------------------- */
+					$("#charBio").html(playerStats.bio);
+					$("#charCom").html(playerStats.com);
+					$("#charPsi").html(playerStats.psi);
+					$("#charTec").html(playerStats.tec);
+				/* -------------------------- */
+				/* Dados 											*/
+				/* -------------------------- */
+					$("#charDmgDice").html(playerDice[0]);
+					$("#charHpDice").html(playerDice[1]);
+					$("#charHumDice").html(playerDice[2]);
+				/* -------------------------- */
+				/* Características            */
+				/* -------------------------- */
+					$("#charHP").html(playerChar.salud);
+					$("#charMP").html(playerChar.poder);
+					$("#charDefensa").html(playerChar.defensa);
+				/* -------------------------- */
+				/* Equipo										  */
+				/* -------------------------- */
+				// Créditos
+					$("#initialCoins").html(firstCoins);
+				// Protección
+					if (armorsEe.precio[firstArmor] > 0) {
+						$("#armorRow").show();
+						// Pintamos la línea de Arma de color correcto.
+						$("#weaponRow").css("background-color", "#e6f2ff");
+						$("#nameArmor").html("<strong>Protecci&oacute;n " + armorsEe.nombre[firstArmor].toLowerCase() + "</strong>: ");
+						$("#armorDef").html("Defensa " + armorsEe.defensa[firstArmor] + ". Mejoras " + armorsEe.mejoras[firstArmor] + ".");
+					} else {
+						// Si no tiene Protección, ocultamos la fila.
+						$("#armorRow").hide();
+						// Pintamos la línea de Arma de color correcto.
+						$("#weaponRow").css("background-color", "#e6ffff");
+					};
+				// Arma inicial
+					if (weaponsEe.nombre[playerClassEe.armas[playerClass][firstWeapon]] != undefined) {
+						$("#weaponRow").show();
+						$("#nameWeapon").html("<strong>" + weaponsEe.nombre[playerClassEe.armas[playerClass][firstWeapon]] + "</strong>:");
+						$("#infoWeapon").html(weaponsEe.info[playerClassEe.armas[playerClass][firstWeapon]]);
+						// Dado de uso Munición
+							if (weaponsEe.du[playerClassEe.armas[playerClass][firstWeapon]] != "") {
+								$("#udWeapon").html("<br /><strong>DU munici&oacute;n</strong>: " + weaponsEe.du[playerClassEe.armas[playerClass][firstWeapon]] + ".");
+							} else {
+								$("#udWeapon").empty();
+							};
+					} else {
+						// Si no tiene Arma inicial, ocultamos la fila.
+						$("#weaponRow").hide();
+					};
+				/* -------------------------- */
+				/* Variables de conteo 				*/
+				/* -------------------------- */
+				var i;
+				var o;
+				/* -------------------------- */
+				/* Rasgos del personaje       */
+				/* -------------------------- */
+				$("#playerTraits").empty();
+				for (i = 0; i < playerTraits.length; i++) {
+					o = playerTraits[i];
+					appendCells("<strong>" + playerTraitsEe.nombre[o] + "</strong>: " + playerTraitsEe.info[o], "#playerTraits");
+				};
+				/* -------------------------- */
+				/* Mejoras de la Protección   */
+				/* -------------------------- */
+				$("#armorUpgrades").empty();
+				var upgradePrice;
+				if (armorUpgrades.length > 0) {
+					$("#upgradeTable").show();
+						for (i = 0; i < armorUpgrades.length; i++) {
+								o = armorUpgrades[i];
+								upgradePrice = upgradesEe.precio[o] + raceCost;
+								// Rasgo Altamente preparados reduce el precio a la mitad.
+								if (playerTraits.includes(64)) {
+									upgradePrice = Math.ceil(upgradePrice / 2);
+								};
+								appendCells(
+									"<strong>" + upgradesEe.nombre[o] + "</strong>: " +	// Nombre
+									upgradePrice + " Cr&eacute;ditos. "  +							// Precio
+									upgradesEe.info[o], "#armorUpgrades"								// Mejoras
+								);
+						};
+				} else {
+					// Si no tenemos ninguna Mejora, no mostramos nada.
+					$("#upgradeTable").hide();
+				};
+				/* Módulos de Expansión 			*/
+				$("#androidModules").empty();
+				if (playerModules.length > 0) {
+					$("#moduleTable").show();
+					// Módulos de Expansión
+					for (i = 0; i < playerModules.length; i++) {
+							o = playerModules[i];
+							appendCells(
+								"<strong>" + androidModules.nombre[o] + "</strong>: " +	// Nombre
+								androidModules.info[o], "#moduleTable" // Mejoras
+							);
+					};
+				} else {
+					// Si no tenemos ningún Módulo, no mostramos nada.
+					$("#moduleTable").hide();
+				};
+				/* -------------------------- */
+				/* Objetos del personaje 			*/
+				/* -------------------------- */
+				$("#playerItems").empty();
+				if (playerItems.length > 0) {
+					$("#itemTable").show();
+					for (i = 0; i < playerItems.length; i++) {
+						o = playerItems[i];
+						appendCells("<strong>" + itemsEe.nombre[o] + "</strong>: " + itemsEe.precio[o] + " Cr&eacute;ditos. "  + itemsEe.du[o] + itemsEe.info[o], "#playerItems");
+					};
+				} else {
+					$("#itemTable").hide();
+				};
+				/* -------------------------- */
+				/* Implantes del personaje 		*/
+				/* -------------------------- */
+				$("#playerImplants").empty();
+				if (playerImplants.length > 0) {
+					$("#impTable").show();
+					for (i = 0; i < playerImplants.length; i++) {
+						o = playerImplants[i];
+						appendCells("<strong>" + implantsEe.nombre[o] + "</strong>: " + (implantsEe.precio[o] + raceCost) + " Cr&eacute;ditos. "+ implantsEe.info[o], "#playerImplants");
+					};
+				} else {
+					$("#impTable").hide();
+				};
+				/* -------------------------- */
+				/* Poderes del personaje 		*/
+				/* -------------------------- */
+				$("#playerPowers").empty();
+				if (playerPowers.length > 0) {
+					$("#powTable").show();
+					for (i = 0; i < playerPowers.length; i++) {
+						o = playerPowers[i];
+						appendCells("<strong>" + powersEe.nombre[o] + "</strong>:" + " (" + powersEe.coste[o] + ") "  + powersEe.info[o], "#playerPowers");
+					};
+				} else {
+					$("#powTable").hide();
+				};
+				/* -------------------------------- */
+				/* Hoja de personaje								*/
+				/* -------------------------------- */
+				switch($("#characterSheet").css("display")) {
+					case "none":
+						$("#characterSheet").fadeIn("slow"); 	// jQuery fadeIn
+						$("#hideSheet").fadeIn("slow");				// jQuery fadeIn
+						$("#downloadJson").fadeIn("slow");		// jQuery fadeIn
+						$("#exportPdf").fadeIn("slow");				// jQuery fadeIn
+					break;
+				};
+				// Detalles de la semilla.
+				$("#jsonSeed").val(jsonSeed);
+				$("#jsonSeed").hide();
+				// Finalizamos la Hoja de personaje
+				console.log("==================================================");
+			};
+		</script>
+		<link rel="icon" href="https://i2.wp.com/naufragio.net/wp-content/uploads/2018/06/cropped-IconoNaufragioCuadrado.png?fit=32%2C32&#038;ssl=1" sizes="32x32" />
+		<link rel="icon" href="https://i2.wp.com/naufragio.net/wp-content/uploads/2018/06/cropped-IconoNaufragioCuadrado.png?fit=192%2C192&#038;ssl=1" sizes="192x192" />
+		<link rel="apple-touch-icon-precomposed" href="https://i2.wp.com/naufragio.net/wp-content/uploads/2018/06/cropped-IconoNaufragioCuadrado.png?fit=180%2C180&#038;ssl=1" />
+		<meta name="msapplication-TileImage" content="https://i2.wp.com/naufragio.net/wp-content/uploads/2018/06/cropped-IconoNaufragioCuadrado.png?fit=270%2C270&#038;ssl=1" />
+	</head>
+	<body>
+		<div id="content">
+			<!-- Comienzo Hoja de personaje -->
+			<div class="pageStart">
+				<h1>Generador de personajes para Estrellas Errantes</h1>
+				<p>Crea un personaje al azar para <a href="https://www.yipikayei.com/producto/estrellas-errantes-preventa/" target="_blank">Estrellas Errantes</a>.</p>
+				<div id="optionsPick">
+						<div id="mainOptions">
+						<!-- Clase de personaje -->
+						<strong>Clase</strong>
+							<select id="optionClass">
+		 						<option value="random" selected>&raquo; Aleatoria</option>
+		 				 	</select>
+							<!-- Especie del personaje -->
+								<strong>Especie</strong>
+								<select id="optionRace">
+									<option value="no" selected>&raquo; Ninguna</option>
+									<option value="random">&raquo; Aleatoria</option>
+								</select>
+						<!-- Nivel del personaje -->
+						<strong>Nivel</strong>
+							<input type="number" id="optionLevel" min="0" max="5" placeholder="0" />
+						</div>
+					<div id="optionZone">
+						<!-- Botones de opciones -->
+						<button id="createCharacter">Crear</button>
+						<button id="secretOptions" onclick="hiddenOptions(1);">Opciones</button>
+						<button id="hideSheet" onclick="hideSheet();">Ocultar</button>
+					</div>
+			</div>
+
+				<!-- Opciones ocultas -->
+				<div id="hiddenOptions">
+					<h2>Opciones de personaje</h2>
+						<div id="optionZone">
+						<!-- Género del personaje -->
+							<strong>G&eacute;nero</strong>
+							<select id="optionGender" style="width:auto;">
+								<option value="random" selected>?</option>
+								<option value="0">♂</option>
+								<option value="1">♀</option>
+							</select>
+							<strong>Prioridades</strong>
+							<select id="optionEquipmentPriority" style="width:auto;">
+								<option value="upgrades" selected>Mejoras</option>
+								<option value="implants">Implantes</option>
+								<option value="items">Objetos</option>
+							</select>
+						</div>
+						<div id="optionZone">
+							<strong>Objetos</strong>
+								<input type="number" id="maxItems" min="0" max="5" placeholder="0" />
+							<strong>Mejoras</strong>
+								<input type="number" id="maxUpgrades" min="0" max="4" placeholder="0" />
+							<strong>Implantes</strong>
+								<input type="number" id="maxImplants" min="0" max="5" placeholder="0" />
+						</div>
+
+					<!-- Optimización de puntuación -->
+					<div id="hiddenOptionsButtons">
+						<div id="optionZone">
+							<strong id="tooltip1" title="Ordenar de forma beneficiosa para la Clase las tiradas de Atributos.">Optimizar Atributos</strong>
+								<input type="checkbox" id="optimizeAttr" />
+						</div>
+						<div id="optionZone">
+						<strong id="tooltip2" title="Aplicar la Protección con más Defensa para la Clase.">Optimizar Protecciones</strong>
+							<input type="checkbox" id="optimizeArmor" />
+						</div>
+						<div id="optionZone">
+						<strong id="tooltip3" title="Añadir opciones no oficiales a los resultados aleatorios.">Contenido no b&aacute;sico</strong>
+							<input type="checkbox" id="acceptHomebrew" />
+						</div>
+					</div>
+					<button id="closeWindow" onclick="hiddenOptions(0);">OK</button>
+				</div>
+			</div>
+
+			<!-- Hoja de personaje -->
+			<div id="characterSheet">
+				<div class="playerStats" id="playerInfo">
+					<table id="infoTable">
+						<tr style="background-color: #e6f2ff;">
+							<td id="sectionTitle"><span id="playerName"></span>, <span id="playerJob"></span><span id="playerLevel"></span></td>
+						</tr>
+					</table>
+				</div>
+
+				<div class="playerStats" id="playerAttributes">
+					<!-- Tabla de Atributos -->
+					<table class="leftTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle">Atributos</td>
+								<td id="totalAtr"></td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td id="statName">
+									<img id="statIcon" alt="BIO" title="BIO" src="img/biceps.png" />
+									BIO
+								</td>
+								<td id="charBio"></td>
+							</tr>
+							<tr>
+								<td id="statName">
+									<img id="statIcon" alt="COM" title="COM" src="img/talk.png" />
+									COM
+								</td>
+								<td id="charCom"></td>
+							</tr>
+							<tr>
+								<td id="statName">
+									<img id="statIcon" alt="PSI" title="PSI" src="img/brain.png" />
+									PSI
+								</td>
+								<td id="charPsi"></td>
+							</tr>
+							<tr>
+								<td id="statName">
+									<img id="statIcon" alt="TEC" title="TEC" src="img/processor.png" />
+									TEC
+								</td>
+								<td id="charTec"></td>
+							</tr>
+						</tbody>
+					</table>
+					<!-- Tabla de Valores -->
+					<table class="leftTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle">Caracter&iacute;sticas</td>
+								<td id="cellLine"></td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td id="statName">
+									<img id="statIcon" alt="Puntos de Salud" title="Puntos de Salud" src="img/health-normal.png" />
+									Puntos de Salud
+								</td>
+								<td id="charHP"></td>
+							</tr>
+							<tr>
+								<td id="statName">
+									<img id="statIcon" alt="Puntos de Poder" title="Puntos de Poder" src="img/power-lightning.png" />
+									Puntos de Poder
+								</td>
+								<td id="charMP"></td>
+							</tr>
+							<tr id="spellRow">
+								<td id="statName">
+									<img id="statIcon" alt="Defensa" title="Defensa" src="img/saiyan-suit.png" />
+									Defensa
+								</td>
+								<td id="charDefensa"></td>
+							</tr>
+						</tbody>
+					</table>
+					<!-- Tabla de Dados -->
+					<table class="leftTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle">Dados</td>
+								<td id="cellLine"></td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td id="statName">
+									<img id="statIcon" alt="Dado de da&ntilde;o" title="Dado de da&ntilde;o" src="img/bolter-gun.png" />
+									Da&ntilde;o
+								</td>
+								<td id="charDmgDice"></td>
+							</tr>
+							<tr>
+								<td id="statName">
+									<img id="statIcon" alt="Dado de salud" title="Dado de salud" src="img/half-heart.png" />
+									Salud
+								</td>
+								<td id="charHpDice"></td>
+							</tr>
+							<tr id="spellRow">
+								<td id="statName">
+									<img id="statIcon" alt="Humanidad" title="Humanidad" src="img/abstract-014.png" />
+									Humanidad
+								</td>
+								<td id="charHumDice"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="playerStats" id="playerCharacteristics">
+					<!-- Tabla de Rasgos -->
+					<table class="itemTable" id="traitTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle" colspan="2">Rasgos</td>
+							</tr>
+						</thead>
+						<tbody id="playerTraits">
+						</tbody>
+					</table>
+					<!-- Tabla de Módulos de expansión -->
+					<table class="itemTable" id="moduleTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle" colspan="2">M&oacute;dulos de expansi&oacute;n</td>
+							</tr>
+						</thead>
+						<tbody id="androidModules">
+						</tbody>
+					</table>
+					<!-- Tabla de Equipo -->
+					<table class="itemTable" id="equTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle" style="width: 100%;">
+									Equipo inicial
+								</td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td id="playerCompetences" style="text-align: left;"></td>
+							</tr>
+							<tr>
+								<td>
+									<strong>Dinero:</strong> <span id="initialCoins"></span> Cr&eacute;ditos.
+								</td>
+							</tr>
+							<tr id="armorRow">
+								<td>
+									<span id="nameArmor"></span>
+									<span id="armorDef"></span>
+								</td>
+							</tr>
+							<tr id="weaponRow">
+								<td>
+									<span id="nameWeapon"></span>
+									<span id="infoWeapon"></span>
+									<span id="udWeapon"></span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<!-- Tabla de Mejoras -->
+					<table class="itemTable" id="upgradeTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle" colspan="2">Mejoras de la Protección</td>
+							</tr>
+						</thead>
+						<tbody id="armorUpgrades">
+						</tbody>
+					</table>
+					<!-- Tabla de Equipo común -->
+					<table class="itemTable" id="itemTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle" colspan="2">Mochila</td>
+							</tr>
+						</thead>
+						<tbody id="playerItems">
+						</tbody>
+					</table>
+					<!-- Tabla de Implantes -->
+					<table class="itemTable" id="impTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle" colspan="2">Implantes</td>
+							</tr>
+						</thead>
+						<tbody id="playerImplants">
+						</tbody>
+					</table>
+					<!-- Tabla de Poderes -->
+					<table class="itemTable" id="powTable">
+						<thead>
+							<tr>
+								<td id="sectionTitle" colspan="2">Poderes</td>
+							</tr>
+						</thead>
+						<tbody id="playerPowers">
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="buttonZone">
+				<button id="openJson">Cargar</button>
+				<button id="downloadJson">Guardar</button>
+				<input type="file" id="inputFile" accept=".json" class="hidden">
+				<button id="exportPdf">PDF</button>
+				<!-- Zona Json -->
+				<span id="jsonSeed"></span><span id="loadedSeed"></span>
+			</div>
+			<!-- Créditos de la página -->
+			<div class="credits">
+				<p>
+					<a href="https://naufragio.net/" target="_blank"><img id="rss" src="https://i2.wp.com/naufragio.net/wp-content/uploads/2018/05/IconoNaufragio.png" title="El Naufragio" alt="El Naufragio" /></a>
+					<a href="https://twitter.com/starkvind/" target="_blank"><img id="rss" src="https://naufragio.net/wp-content/uploads/2017/04/twitter-icon.png" title="Twitter Starkvind" alt="Twitter Starkvind" /></a>
+					<a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank"><img src="http://descargas.naufragio.net/cc-by-sa.png" title="CC-BY-SA" alt="CC-BY-SA" /></a>
+				</p>
+				<p>
+					Iconos por <a href="http://www.game-icons.net" target="_blank">Game-Icons.net</a>. <br />
+					Nombres aleatorios por <a href="http://www.rinkworks.com/namegen/fnames.cgi?d=1&f=0" target="_blank">Rinkworks</a>.
+				</p>
+			</div>
+		</div>
+	</body>
+</html>

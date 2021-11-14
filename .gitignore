@@ -1,0 +1,5 @@
+# Don't track content of these folders
+.old/
+cable.json
+talentos_MasAlla.txt
+test.html

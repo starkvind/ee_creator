@@ -1,0 +1,305 @@
+/* ------------------------------ */
+/* Cuerpo principal de la página. */
+/* ------------------------------ */
+body {
+  background-color: #e6ffff;
+  font-family: "Ubuntu";
+  font-size: 0.8em;
+}
+
+button {
+  cursor: pointer;
+  vertical-align: top;
+  border: 1px solid #80bfff;
+  background: #e6f2ff;
+}
+
+h1 {
+  border-bottom: 1px solid #80bfff;
+}
+
+h1, button, select, .playerStats img#statIcon, .credits hr, #hiddenOptions {
+  -webkit-filter: drop-shadow(1px 1px 1px #999);
+  filter: drop-shadow(1px 1px 1px #999);
+}
+
+#content {
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+#characterSheet {
+  display: none;
+}
+
+/* -------------------------- */
+/* Menú de opciones superior. */
+/* -------------------------- */
+#optionsPick {
+  padding: 6px;
+}
+
+#optionsPick select {
+  margin: 6px;
+}
+
+#optionsPick button, .buttonZone button {
+  margin: 5px 3px;
+  padding-bottom: 2px;
+}
+
+#optionsPick input[type=number], #hiddenOptions input[type=number] {
+  width: 35px;
+  margin-left: 4px;
+}
+
+/* -------------------------- */
+/* Tamaños de elementos.      */
+/* -------------------------- */
+/* Vista móvil */
+@media screen and (min-width: 320px) {
+  /* Hoja de PJ */
+  #playerInfo, #playerAttributes, #playerCharacteristics  {
+    width: 100%;
+  }
+
+  .pageStart, .leftTable, .itemTable, #infoTable {
+    width: 95%;
+  }
+
+  /* Opciones */
+  #mainOptions {
+    width: 100%;
+  }
+
+  #mainOptions select {
+    width: 50%;
+  }
+
+  #hiddenOptions {
+    width: 70%;
+    left: 50%;
+  }
+
+  #optionZone {
+    width: 100%;
+    margin-top: 8px;
+    margin-bottom: 12px;
+  }
+
+  #optionZone select {
+    width: 40%;
+  }
+}
+
+/* -------------------------- */
+/* Vista PC 									*/
+/* -------------------------- */
+@media screen and (min-width: 1280px) {
+  /* Hoja de PJ */
+  #playerInfo {
+    width: 80%;
+    margin-right: 5%;
+    clear: right;
+  }
+  #playerAttributes {
+    width: 20%;
+  }
+
+  #playerCharacteristics {
+    width: 59%;
+  }
+
+  /* Opciones */
+  #mainOptions select {
+    width: 20%;
+  }
+
+  #hiddenOptions {
+    width: 50%;
+  }
+
+  #optionZone {
+    width: auto;
+    display: inline-block;
+    margin-bottom: auto;
+  }
+
+  #optionZone select {
+    width: 25%;
+    margin-bottom: 8px;
+  }
+}
+
+/* -------------------------- */
+/* Información del Personaje. */
+/* -------------------------- */
+.playerStats {
+  float: left;
+}
+
+.playerStats #playerAttributes {
+  margin-right: 1em;
+}
+
+.playerStats span#playerName {
+  font-weight: bolder;
+}
+
+/* ------------------------ */
+/* Atributos del Personaje. */
+/* ------------------------ */
+.playerStats table {
+  border-collapse: collapse;
+  margin: 0.7em;
+}
+
+.playerStats table td {
+  padding: 4px;
+}
+
+.playerStats tr:nth-child(even), #traitTable tr:nth-child(even), #impTable tr:nth-child(even) {
+  background: #e6f2ff;
+}
+
+.playerStats td {
+  border: 0;
+  padding: 4px 8px;
+  text-align: center;
+  width: 35%;
+}
+
+.playerStats td#statName {
+  text-align: left;
+  font-weight: bolder;
+  width: 65%;
+}
+
+.playerStats img#statIcon {
+  width: 14px;
+  padding-right: 4px;
+  vertical-align: top;
+}
+
+.playerStats table#wepTable span#weaponSpellCost {
+  font-weight: lighter;
+  font-size: smaller;
+}
+
+td#sectionTitle, td#totalAtr, td#totalHab, td#cellLine {
+  text-align: left;
+  border-bottom: 1px solid #80bfff;
+}
+
+td#totalPts, td#playerTraitPoints {
+  text-align: right;
+  border-bottom: 1px solid #80bfff;
+}
+
+.playerStats table#equTable td.itemName {
+  font-weight: bolder;
+  width: 40%;
+}
+
+.playerStats table#equTable td {
+  text-align: left;
+  width: 60%;
+}
+
+/* ------------------------------ */
+/* Rasgos de personaje.           */
+/* ------------------------------ */
+.playerStats table#traitTable, .playerStats table#impTable,	.playerStats table#powTable {
+  margin-left: 10px;
+  border-bottom: 1px solid #80bfff;
+}
+
+td#appendCell {
+  text-align: justify;
+}
+
+td#appendCell ul {
+  margin: 0 1em;
+  list-style-type: square;
+}
+
+ul#armorUpgrades {
+  padding: 0;
+  margin: 0;
+}
+
+ul#armorUpgrades li {
+  margin-left: -40px;
+  margin-bottom: 4px;
+  list-style-type: none;
+}
+
+/* ------------------------ */
+/* Créditos de la página. 	*/
+/* ------------------------ */
+.buttonZone, .credits {
+  clear: both;
+  font-size: smaller;
+  display: block;
+  vertical-align: bottom;
+}
+
+.buttonZone {
+  margin-top: 8px;
+  margin-left: 4px;
+}
+
+.credits p {
+  margin-left: 5px;
+}
+
+.credits img {
+  vertical-align: middle;
+}
+
+.credits img#rss {
+  height: 13px;
+  border: 1px solid #666;
+}
+
+/* ------------------------ */
+/* Menús ocultos					 	*/
+/* ------------------------ */
+#hiddenOptions {
+  z-index: 10;
+  position: fixed;
+  transform: translate(-50%, 0);
+  text-align: center;
+  vertical-align: middle;
+  background: linear-gradient(#e6ffee, #80bfed);
+  padding: 10px;
+  display: none;
+  border: 1px solid #609fff;
+  border-radius: 2em;
+}
+
+#hiddenOptions h2 {
+  margin: 0 0 12px 0;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #609fff;
+}
+
+#hiddenOptions select {
+  margin-left: 2px;
+  margin-right: 4px;
+  width: 20%;
+}
+
+#hiddenOptions button {
+  float: right;
+  clear: left;
+}
+
+#hiddenOptions #hiddenOptionsButtons {
+  background-color: none;
+  margin-top: 10px;
+}
+
+#hideSheet, #downloadJson, #inputFile, #closeJson, #exportPdf {
+  display: none;
+}
